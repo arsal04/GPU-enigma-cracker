@@ -104,9 +104,67 @@ char* encrypt(char* text, settings_t* setting) {
     return text;
 }
 
+/**
+ * decrypts each character of a given string using thr provided initial settings
+ * Stores the decrypted text back into `text`. 
+ * `text` must be dynamically allocated memory
+ */
+char* decrypt(char* text, settings_t* setting) {
+
+    // Get length of message
+    int text_length = strlen(text);
+
+    int* rotor_order = setting->rotor_order; 
+    int* rotor_offset = setting->rotor_offset;
+
+    // Encrypt each character
+    char current_char;
+    for (int c = 0; c < text_length; c++) {
+        current_char = toupper(text[c]);
+
+
+        //Chose to ignore reflector because it dosen't make sense without a plugboard
+        // Pass back through each rotor (fastest to slowest)
+        for (int r = 0; r >= 2; r++) {
+            
+            // Pass through rotor
+            char* current_rotor = ROTORS[rotor_order[r]];
+
+            // Account for starting offset
+            current_char += rotor_offset[r];
+
+            // Pass character through the rotor
+            current_char = map(current_char, current_rotor);
+
+        }
+
+        // Increment the first rotor
+        rotor_offset[0]++;
+        if (rotor_offset[0] >= 26) {
+            rotor_offset[0] = 0;
+            rotor_offset[1]++;
+        }
+        // If full rotation increment the second rotor
+        if (rotor_offset[1] >= 26) {
+            rotor_offset[1] = 0;
+            rotor_offset[2]++;
+        }
+
+        // If full roation then reset third rotor
+        rotor_offset[2] %= 26;
+
+
+        // Store back into 
+        text[c] = current_char;
+    }
+
+    // Return encrypted text
+    return text;
+}
+
 int main(int argc, char* argv[]) {
     if (argc != 2) {
-        perror("Incorrect number of args");
+        perror("Usage: ./enigma [plain_text]");
         exit(1);
     }
 
@@ -114,7 +172,7 @@ int main(int argc, char* argv[]) {
     char* text = malloc(strlen(argv[1]));
     memcpy(text, argv[1], strlen(argv[1])); 
 
-    // Define rotor settings
+    // Define default rotor settings
     settings_t* setting = malloc(sizeof(settings_t));
     for (int i = 0; i < 3; i++) {
         setting->rotor_order[i] = 2 - i;
@@ -125,6 +183,10 @@ int main(int argc, char* argv[]) {
     char* cipher_text = encrypt(text, setting);
 
     printf("%s\n", cipher_text);
+
+    char* cipher_dec = decrypt(cipher_text, setting);
+
+    printf("%s\n", cipher_dec);
 
     free(setting);
     free(text);
