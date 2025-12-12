@@ -6,11 +6,14 @@
 
 // Defining rotor wirings
 // Citation: German Railway (Rocket) https://en.wikipedia.org/wiki/Enigma_rotor_details
-char* ROTORS[27] = {"JGDQOXUSCAMIFRVTPNEWKBLZYH", 
+char* ROTORS[26] = {"JGDQOXUSCAMIFRVTPNEWKBLZYH", 
                  "NTZPSFBOKMWRCJDIVLAEYUXHGQ",
                  "JVIUBHTCDYAKEQZPOSGXNRMWFL",
                  "QYHOGNECVPUZTFDJAXWMKISRBL",
                  "QWERTZUIOASDFGHJKPYXCVBNML"};
+
+char* REFLECTOR = "ZYXWVUTSRQPONMLKJIHGFEDCBA";
+
 
 char* ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // Perhaps convert to hashmap
 
@@ -60,11 +63,34 @@ char* encrypt(char* text, settings_t* setting) {
             
             // Account for starting offset
             current_char += rotor_offset[r];
+            current_char = (current_char % 65) + 65;
 
             // Pass character through the rotor
             current_char = map(current_char, current_rotor);
+            printf("%c\n", current_char);
         }
 
+        // Pass character through the reflector
+        current_char = map(current_char, REFLECTOR);
+        printf("%c;\n", current_char);
+
+        // Pass back through each rotor (fastest to slowest)
+        for (int r = 0; r <= 2; r++) {
+
+            // Pass through rotor
+            char* current_rotor = ROTORS[rotor_order[r]];
+
+            // Account for starting offset
+            current_char += rotor_offset[r];
+            current_char = (current_char % 65) + 65;
+
+            // Pass character through the rotor
+            current_char = map(current_char, current_rotor);
+            printf("%c\n", current_char);
+
+        }
+
+        // Increment the rotors when reversing through them
         // Increment the first rotor
         rotor_offset[0]++;
         if (rotor_offset[0] >= 26) {
@@ -80,23 +106,7 @@ char* encrypt(char* text, settings_t* setting) {
         // If full roation then reset third rotor
         rotor_offset[2] %= 26;
 
-        // Chose to ignore reflector because it dosen't make sense without a plugboard
-        // // Pass back through each rotor (fastest to slowest)
-        // for (int r = 0; r >= 2; r++) {
-            
-        //     // Pass through rotor
-        //     char* current_rotor = ROTORS[placed_rotors[r]];
-
-        //     // Account for starting offset
-        //     current_char += rotor_offset[r];
-
-        //     // Pass character through the rotor
-        //     current_char = map(current_char, current_rotor);
-
-        // }
-
-
-        // Store back into 
+        // Store back into output string
         text[c] = current_char;
     }
 
@@ -184,9 +194,9 @@ int main(int argc, char* argv[]) {
 
     printf("%s\n", cipher_text);
 
-    char* cipher_dec = decrypt(cipher_text, setting);
+    // char* cipher_dec = decrypt(cipher_text, setting);
 
-    printf("%s\n", cipher_dec);
+    // printf("%s\n", cipher_dec);
 
     free(setting);
     free(text);
