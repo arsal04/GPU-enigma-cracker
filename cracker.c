@@ -52,67 +52,142 @@ void* worker (void* args) {
 }
 
 
-// int main(int argc, char* argv[]) { 
-//     // Take input
-//     char* text = malloc(strlen(argv[1]));
-//     memcpy(text, argv[1], strlen(argv[1])); 
-//     float IOC_rotors[60];
+int main(int argc, char* argv[]) { 
+    // Take input
+    char* text = malloc(strlen(argv[1]));
+    memcpy(text, argv[1], strlen(argv[1])); 
 
-//     // Initializing the IOCs for each rotor setting possible 
-//     for(int i = 0; i < 60; i++){
-//         IOC_rotors[i] = 0;
-//     }
+    // Initialize rotor settings
+    settings_t* setting = malloc(sizeof(settings_t));
+    for (int i = 0; i < 3; i++) {
+        setting->rotor_order[i] = i;
+        setting->rotor_offset[i] = 0;
+    }
 
-//     // Initialize a random rotor settings
-//     settings_t* setting = malloc(sizeof(settings_t));
-//     for (int i = 0; i < 3; i++) {
-//         setting->rotor_order[i] = 2 - i;
-//         setting->rotor_offset[i] = 0;
-//     }
-
-//     // iterate through each permutation of rotors
-//     int count = 0;
-//     float max1 = 0;
-//     float max2 = 0;
-//     float max3 = 0;
-//     float max4 = 0;
-//     float max5 = 0;
-//     for (int i = 0; i < 5; i++) {
-//         for (int j = 0; j < 5; j++) {
-//             if (j == i) {
-//                 continue;
-//             }        
-//             for (int k = 0; k < 5; k++) {
-//                 if (k == j || k == i) {
-//                     continue;
-//                 }
-
-//                 setting->rotor_order[0] = i;
-//                 setting->rotor_order[1] = j;
-//                 setting->rotor_order[2] = k;
-
-//                 // Encrypt the text
-//                 char* cipher_text = decrypt(text, setting);
-
-//                 // Calculate the index of coincidence
-//                 float ioc = index_of_coincidence(cipher_text);
-
-//                 // printf("%d) IOC: %f\n", count, ioc);
-//                 count++;
-//                 if(max1 < ioc){
-//                     max1 = ioc;
-//                 }
-                
-//             }   
-//         }
-//     }
-//     printf("Best IOC = %f\n", max1);
+    // iterate through each permutation of rotors
+    float max1 = 0;
+    settings_t* best_rotor_config1 = malloc(sizeof(settings_t));
+    settings_t* best_rotor_config2 = malloc(sizeof(settings_t));
+    settings_t* best_rotor_config3 = malloc(sizeof(settings_t));
+    settings_t* best_rotor_config4 = malloc(sizeof(settings_t));
+    settings_t* best_rotor_config5 = malloc(sizeof(settings_t));
     
 
+    float max2 = 0;
+    float max3 = 0;
+    float max4 = 0;
+    float max5 = 0;
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            if (j == i) {
+                continue;
+            }        
+            for (int k = 0; k < 5; k++) {
+                if (k == j || k == i) {
+                    continue;
+                }
 
-//     // Free allocated memory
-//     free(setting);
-//     free(text);
+                setting->rotor_order[0] = i;
+                setting->rotor_order[1] = j;
+                setting->rotor_order[2] = k;
 
-//     return 0;
-// }
+                // Encrypt the text
+                char* cipher_text = encrypt(text, setting);
+
+                // Calculate the index of coincidence
+                float ioc = index_of_coincidence(cipher_text);
+
+                if(max1 < ioc){
+                    max1 = ioc;
+                    memcpy(best_rotor_config1, setting, sizeof(settings_t));
+                } else if(max2 < ioc){
+                    max2 = ioc;
+                    memcpy(best_rotor_config2, setting, sizeof(settings_t));
+                } else if(max3 < ioc){
+                    max3 = ioc;
+                    memcpy(best_rotor_config3, setting, sizeof(settings_t));
+                } else if(max4 < ioc){
+                    max4 = ioc;
+                    memcpy(best_rotor_config4, setting, sizeof(settings_t));
+                } else if(max5 < ioc){
+                    max5 = ioc;
+                    memcpy(best_rotor_config5, setting, sizeof(settings_t));
+                }
+            }   
+        }
+    }
+    
+
+    printf("%d %d %d\n", best_rotor_config1->rotor_order[0], best_rotor_config1->rotor_order[1], best_rotor_config1->rotor_order[2]);
+    printf("%d %d %d\n", best_rotor_config2->rotor_order[0], best_rotor_config2->rotor_order[1], best_rotor_config2->rotor_order[2]);
+    printf("%d %d %d\n", best_rotor_config3->rotor_order[0], best_rotor_config3->rotor_order[1], best_rotor_config3->rotor_order[2]);
+    printf("%d %d %d\n", best_rotor_config4->rotor_order[0], best_rotor_config4->rotor_order[1], best_rotor_config4->rotor_order[2]);
+    printf("%d %d %d\n", best_rotor_config5->rotor_order[0], best_rotor_config5->rotor_order[1], best_rotor_config5->rotor_order[2]);
+
+    // Finding best rotor offsets
+    
+    int rotor1 = best_rotor_config1->rotor_order[0];
+    int rotor2 = best_rotor_config1->rotor_order[1];
+    int rotor3 = best_rotor_config1->rotor_order[2];
+    setting->rotor_order[0] = rotor1;
+    setting->rotor_order[1] = rotor2;
+    setting->rotor_order[2] = rotor3;
+    max1 = 0;
+    max2 = 0;
+    max3 = 0;
+    max4 = 0;
+    max5 = 0;
+    char* bestText1 = malloc(strlen(argv[1]));
+    char* bestText2 = malloc(strlen(argv[1]));
+    char* bestText3 = malloc(strlen(argv[1]));
+    char* bestText4 = malloc(strlen(argv[1]));
+    char* bestText5 = malloc(strlen(argv[1]));
+
+    for (int i = 0; i < 26; i++) {
+        for (int j = 0; j < 26; j++) {
+            for (int k = 0; k < 26; k++) {
+                setting->rotor_offset[rotor1] = i;
+                setting->rotor_offset[rotor2] = j;
+                setting->rotor_offset[rotor3] = k;
+                
+                // Encrypt the text
+                char* cipher_text = encrypt(text, setting);
+
+                // Calculate the index of coincidence
+                float ioc = index_of_coincidence(cipher_text);
+
+                if(max1 < ioc){
+                    max1 = ioc;
+                    strcpy(bestText1, cipher_text);
+                } else if(max2 < ioc){
+                    max2 = ioc;
+                    strcpy(bestText2, cipher_text);
+                } else if(max3 < ioc){
+                    max3 = ioc;
+                    strcpy(bestText3, cipher_text);
+                } else if(max4 < ioc){
+                    max4 = ioc;
+                    strcpy(bestText4, cipher_text);
+                } else if(max5 < ioc){
+                    max5 = ioc;
+                    strcpy(bestText5, cipher_text);
+                }
+            }
+        }
+    }
+
+    printf("%f\n\n", max1);
+    printf("%s\n\n", bestText1);
+    printf("%s\n\n", bestText2);
+    printf("%s\n\n", bestText3);
+    printf("%s\n\n", bestText4);
+    printf("%s\n\n", bestText5);
+
+    printf("%f\n\n", index_of_coincidence("HELLOTHISISARSALSHAIKHINDASILIAMWORKINGONCSCWITHJAFARANDANSHULHEISHELPINGSOMEONEELSEILOVECOMPUTERSCIENCEANDWANTTOWORKINAMAZONGOOGLENETFLIXMETAFACEBOOKGOLDMANSACHSEPICVERIZONUSAFRANCECHINAJORDAN"));
+
+    // Free allocated memory
+    free(setting);
+    free(text);
+
+    return 0;
+}

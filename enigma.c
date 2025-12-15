@@ -12,6 +12,13 @@ char* ROTORS[26] = {"JGDQOXUSCAMIFRVTPNEWKBLZYH",
                  "QYHOGNECVPUZTFDJAXWMKISRBL",
                  "QWERTZUIOASDFGHJKPYXCVBNML"};
 
+char* ROTORS_INV[26] = {"JVICSMBZLAUWKREQDNHPGOTFYX", 
+                 "SGMOTFYXPNIRJAHDZLEBVQKWUC",
+                 "KEHIMYSFCALZWUQPNVRGDBXTJO",
+                 "QYHOGNECVPUZTFDJAXWMKISRBL",
+                 "JWULCMNOHPQZYXIRADKEGVBTSF"};
+
+
 char* REFLECTOR = "ZYXWVUTSRQPONMLKJIHGFEDCBA";
 
 
@@ -46,14 +53,21 @@ char* encrypt(char* text, settings_t* setting) {
     // Get length of message
     int text_length = strlen(text);
 
-    int* rotor_order = setting->rotor_order; 
-    int* rotor_offset = setting->rotor_offset;
+    int rotor_order[3] = {0,0,0};
+    int rotor_offset[3] = {0,0,0};
+    for (int i = 0; i < 3; i++) {
+        rotor_order[i] = setting->rotor_order[i];
+        rotor_offset[i] = setting->rotor_offset[i];
+    }
+
+    // NOTE: This must be freed later when calling encrypt from cracker.
+    char* result = malloc(sizeof(char) * text_length);
+    strcpy(result, text);
 
     // Encrypt each character
     char current_char;
     for (int c = 0; c < text_length; c++) {
         current_char = toupper(text[c]);
-
 
         // Pass through each rotor (slowest to fasted)
         for (int r = 2; r >= 0; r--) {
@@ -63,31 +77,31 @@ char* encrypt(char* text, settings_t* setting) {
             
             // Account for starting offset
             current_char += rotor_offset[r];
-            current_char = (current_char % 65) + 65;
+            if (current_char > 'Z') {
+                current_char -= 26;
+            }
 
             // Pass character through the rotor
             current_char = map(current_char, current_rotor);
-            printf("%c\n", current_char);
         }
 
         // Pass character through the reflector
         current_char = map(current_char, REFLECTOR);
-        printf("%c;\n", current_char);
 
         // Pass back through each rotor (fastest to slowest)
         for (int r = 0; r <= 2; r++) {
 
             // Pass through rotor
-            char* current_rotor = ROTORS[rotor_order[r]];
-
-            // Account for starting offset
-            current_char += rotor_offset[r];
-            current_char = (current_char % 65) + 65;
+            char* current_rotor = ROTORS_INV[rotor_order[r]];
 
             // Pass character through the rotor
             current_char = map(current_char, current_rotor);
-            printf("%c\n", current_char);
 
+            // Account for starting offset
+            current_char -= rotor_offset[r];
+            if (current_char < 'A') {
+               current_char += 26;
+            }
         }
 
         // Increment the rotors when reversing through them
@@ -107,97 +121,39 @@ char* encrypt(char* text, settings_t* setting) {
         rotor_offset[2] %= 26;
 
         // Store back into output string
-        text[c] = current_char;
+        result[c] = current_char;
     }
 
     // Return encrypted text
-    return text;
+    return result;
 }
 
-/**
- * decrypts each character of a given string using thr provided initial settings
- * Stores the decrypted text back into `text`. 
- * `text` must be dynamically allocated memory
- */
-char* decrypt(char* text, settings_t* setting) {
+// int main(int argc, char* argv[]) {
+//     if (argc != 2) {
+//         perror("Usage: ./enigma [plain_text]");
+//         exit(1);
+//     }
 
-    // Get length of message
-    int text_length = strlen(text);
+//     // Take input
+//     char* text = malloc(strlen(argv[1]));
+//     memcpy(text, argv[1], strlen(argv[1])); 
 
-    int* rotor_order = setting->rotor_order; 
-    int* rotor_offset = setting->rotor_offset;
-
-    // Encrypt each character
-    char current_char;
-    for (int c = 0; c < text_length; c++) {
-        current_char = toupper(text[c]);
-
-
-        //Chose to ignore reflector because it dosen't make sense without a plugboard
-        // Pass back through each rotor (fastest to slowest)
-        for (int r = 0; r >= 2; r++) {
-            
-            // Pass through rotor
-            char* current_rotor = ROTORS[rotor_order[r]];
-
-            // Account for starting offset
-            current_char += rotor_offset[r];
-
-            // Pass character through the rotor
-            current_char = map(current_char, current_rotor);
-
-        }
-
-        // Increment the first rotor
-        rotor_offset[0]++;
-        if (rotor_offset[0] >= 26) {
-            rotor_offset[0] = 0;
-            rotor_offset[1]++;
-        }
-        // If full rotation increment the second rotor
-        if (rotor_offset[1] >= 26) {
-            rotor_offset[1] = 0;
-            rotor_offset[2]++;
-        }
-
-        // If full roation then reset third rotor
-        rotor_offset[2] %= 26;
+//     // Define default rotor settings
+//     settings_t* setting = malloc(sizeof(settings_t));
+//     for (int i = 0; i < 3; i++) {
+//         setting->rotor_order[i] = i;
+//         setting->rotor_offset[i] = 10;
+//     }
 
 
-        // Store back into 
-        text[c] = current_char;
-    }
+//     char* cipher_text = encrypt(text, setting);
 
-    // Return encrypted text
-    return text;
-}
+//     printf("%s\n", cipher_text);
 
-int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        perror("Usage: ./enigma [plain_text]");
-        exit(1);
-    }
+//     // char* cipher_dec = decrypt(cipher_text, setting);
 
-    // Take input
-    char* text = malloc(strlen(argv[1]));
-    memcpy(text, argv[1], strlen(argv[1])); 
+//     // printf("%s\n", cipher_dec);
 
-    // Define default rotor settings
-    settings_t* setting = malloc(sizeof(settings_t));
-    for (int i = 0; i < 3; i++) {
-        setting->rotor_order[i] = 2 - i;
-        setting->rotor_offset[i] = 0;
-    }
-
-
-    char* cipher_text = encrypt(text, setting);
-
-    printf("%s\n", cipher_text);
-
-    // char* cipher_dec = decrypt(cipher_text, setting);
-
-    // printf("%s\n", cipher_dec);
-
-    free(setting);
-    free(text);
-}
+//     free(setting);
+//     free(text);
+// }
