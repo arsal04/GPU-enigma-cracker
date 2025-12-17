@@ -61,7 +61,7 @@ char* encrypt(char* text, settings_t* setting) {
     }
 
     // NOTE: This must be freed later when calling encrypt from cracker.
-    char* result = malloc(sizeof(char) * text_length);
+    char* result = malloc((sizeof(char) * text_length) + 1);
     strcpy(result, text);
 
     // Encrypt each character
@@ -135,8 +135,8 @@ char* encrypt(char* text, settings_t* setting) {
 //     }
 
 //     // Take input
-//     char* text = malloc(strlen(argv[1]));
-//     memcpy(text, argv[1], strlen(argv[1])); 
+//     char* text = malloc(strlen(argv[1]) + 1);
+//     memcpy(text, argv[1], strlen(argv[1]));
 
 //     // Define default rotor settings
 //     settings_t* setting = malloc(sizeof(settings_t));
